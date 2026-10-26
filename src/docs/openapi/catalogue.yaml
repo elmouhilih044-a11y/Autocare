@@ -1,0 +1,292 @@
+paths:
+  /cities:
+    get:
+      summary: قائمة المدن
+      tags:
+        - Catalogue
+      responses:
+        '200':
+          description: قائمة المدن المتاحة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/City'
+
+  /stops:
+    get:
+      summary: قائمة المحطات
+      tags:
+        - Catalogue
+      responses:
+        '200':
+          description: قائمة المحطات المتاحة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Stop'
+
+  /lines:
+    get:
+      summary: قائمة الخطوط
+      tags:
+        - Catalogue
+      responses:
+        '200':
+          description: قائمة الخطوط مع المحطات المرتبطة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Line'
+    post:
+      summary: إنشاء خط جديد (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - label
+                - stopIds
+              properties:
+                code:
+                  type: string
+                  example: "LINE-10"
+                label:
+                  type: string
+                  example: "Casablanca - Marrakesh"
+                stopIds:
+                  type: array
+                  items:
+                    type: string
+                  example: ["60d5ecb8b5c9c22b1c8e1111", "60d5ecb8b5c9c22b1c8e2222"]
+      responses:
+        '201':
+          description: تم إنشاء الخط بنجاح
+        '400':
+          description: خطأ في البيانات المدخلة
+        '403':
+          description: غير مصرح (Admin فقط)
+        '409':
+          description: رمز الخط موجود مسبقاً
+
+  /coaches:
+    get:
+      summary: قائمة الحافلات (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: قائمة الحافلات
+        '403':
+          description: غير مصرح
+    post:
+      summary: إضافة حافلة جديدة (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - registration
+                - seatNumbers
+              properties:
+                registration:
+                  type: string
+                  example: "12345-A-6"
+                seatNumbers:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      responses:
+        '201':
+          description: تم إنشاء الحافلة بنجاح
+        '409':
+          description: رقم الحافلة مستخدم مسبقاً
+
+  /departures:
+    get:
+      summary: قائمة الرحلات
+      tags:
+        - Catalogue
+      responses:
+        '200':
+          description: قائمة الرحلات المتاحة
+    post:
+      summary: إنشاء رحلة جديدة بـ Snapshot ثابته (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lineId
+                - coachId
+                - departureAt
+                - arrivalAt
+                - fareCents
+              properties:
+                lineId:
+                  type: string
+                coachId:
+                  type: string
+                departureAt:
+                  type: string
+                  format: date-time
+                  example: "2026-06-01T08:00:00Z"
+                arrivalAt:
+                  type: string
+                  format: date-time
+                  example: "2026-06-01T12:00:00Z"
+                fareCents:
+                  type: integer
+                  example: 15000
+      responses:
+        '201':
+          description: تم إنشاء الرحلة بنجاح مع الـ Snapshot
+        '409':
+          description: الخط أو الحافلة مؤرشفة أو غير متاحة
+
+  /departures/{id}:
+    get:
+      summary: تفاصيل رحلة محددة
+      tags:
+        - Catalogue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تفاصيل الرحلة
+        '404':
+          description: الرحلة غير موجودة
+
+  /departures/{id}/start-boarding:
+    post:
+      summary: تغيير حالة الرحلة إلى BOARDING (Agent)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم فتح الصعود للرحلة
+        '409':
+          description: انتقال غير مسموح للحالة
+
+  /departures/{id}/depart:
+    post:
+      summary: تغيير حالة الرحلة إلى DEPARTED (Agent)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: انطلقت الرحلة بنجاح
+
+  /departures/{id}/cancel:
+    post:
+      summary: إلغاء الرحلة (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم إلغاء الرحلة بنجاح
+
+components:
+  schemas:
+    City:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+          example: "Youssoufia"
+    Stop:
+      type: object
+      properties:
+        _id:
+          type: string
+        cityId:
+          type: string
+        name:
+          type: string
+          example: "Gare Routiere"
+    Line:
+      type: object
+      properties:
+        _id:
+          type: string
+        code:
+          type: string
+        label:
+          type: string
+        isArchived:
+          type: boolean
