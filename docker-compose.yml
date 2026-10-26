@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: strada_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-init:
+    image: mongo:6.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      mongosh --host mongo:27017 --eval '
+        try {
+          rs.status();
+        } catch (err) {
+          rs.initiate({
+            _id: "rs0",
+            members: [{ _id: 0, host: "mongo:27017" }]
+          });
+        }
+      '
+
+  app:
+    build: .
+    container_name: strada_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017/strada?replicaSet=rs0
+      - JWT_SECRET=super_secret_jwt_key_strada_2026
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+volumes:
+  mongo_data:
