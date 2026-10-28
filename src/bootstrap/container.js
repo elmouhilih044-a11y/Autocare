@@ -1,53 +1,23 @@
-const { createContainer, asClass, asFunction, asValue } = require('awilix');
+const { createContainer: createAwilixContainer, asValue } = require('awilix');
+const { registerModules } = require('./register-modules');
+const { systemClock } = require('../shared/clock');
+const env = require('../config/env');
 
-const CatalogueRepository = require('../modules/catalogue/repositories/catalogue.repository');
-const CatalogueService = require('../modules/catalogue/services/catalogue.service');
-const CatalogueController = require('../modules/catalogue/controllers/catalogue.controller');
-const createCatalogueRouter = require('../modules/catalogue/routes/catalogue.routes');
-const { createCatalogueApi } = require('../modules/catalogue');
+function createContainer(overrides = {}) {
+  const container = createAwilixContainer();
 
-const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    req.user = { id: 'test-user-id', role: token };
-    return next();
-  }
-  if (req.headers['x-role']) {
-    req.user = { id: 'test-user-id', role: req.headers['x-role'] };
-    return next();
-  }
-  req.user = { id: 'default-admin-id', role: 'admin' };
-  next();
-};
+  container.register({
+    clock: asValue(overrides.clock || systemClock),
+    jwtSecret: asValue(overrides.jwtSecret || env.jwtSecret),
+    jwtExpiresIn: asValue(overrides.jwtExpiresIn || env.jwtExpiresIn),
+  });
 
-const requireRole = (roles) => (req, res, next) => {
-  if (!roles || roles.length === 0) return next();
-  const userRole = req.user && req.user.role;
-  if (!userRole || !roles.includes(userRole)) {
-    return res.status(403).json({
-      success: false,
-      code: 'FORBIDDEN',
-      message: `Access denied. Requires one of roles: [${roles.join(', ')}]`,
-    });
-  }
-  next();
-};
+  registerModules(container);
 
-const clock = { now: () => new Date() };
+  return container;
+}
 
 const container = createContainer();
 
-container.register({
-  catalogueRepository: asClass(CatalogueRepository).singleton(),
-  catalogueService: asClass(CatalogueService).singleton(),
-  catalogueController: asClass(CatalogueController).singleton(),
-  catalogueApi: asFunction(createCatalogueApi).singleton(),
-  catalogueRouter: asFunction(createCatalogueRouter).singleton(),
-
-  authenticate: asValue(authenticate),
-  requireRole: asValue(requireRole),
-  clock: asValue(clock),
-});
-
 module.exports = container;
+module.exports.createContainer = createContainer;

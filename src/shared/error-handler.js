@@ -3,7 +3,6 @@ function errorHandler(err, req, res, next) {
     return next(err);
   }
 
-  // Handle Mongoose duplicate key error (E11000)
   if (err.code === 11000) {
     return res.status(409).json({
       success: false,
@@ -12,7 +11,6 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // Handle Mongoose CastError (invalid ObjectId)
   if (err.name === 'CastError') {
     return res.status(400).json({
       success: false,
@@ -21,12 +19,19 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // Handle Mongoose ValidationError
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       success: false,
       code: 'VALIDATION_ERROR',
       message: err.message,
+    });
+  }
+
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      success: false,
+      code: 'UNAUTHORIZED',
+      message: 'Invalid or expired token',
     });
   }
 

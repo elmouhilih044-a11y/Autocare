@@ -38,7 +38,7 @@ async function disconnectTestDB() {
 }
 
 /**
- * Clean up collections (City, Stop, Line, Coach, Departure) between tests.
+ * Clean up collections between tests.
  */
 async function clearTestDB() {
   if (mongoose.connection.readyState === 1) {
