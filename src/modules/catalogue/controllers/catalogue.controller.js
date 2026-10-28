@@ -1,57 +1,60 @@
 class CatalogueController {
   constructor({ catalogueService }) {
-    Object.assign(this, { catalogueService });
+    this.catalogueService = catalogueService;
   }
 
+  // --- Cities ---
   getCities = async (req, res, next) => {
     try {
-      const cities = await this.catalogueService.getCities();
-      res.status(200).json({ success: true, data: cities });
+      const result = await this.catalogueService.getCities(req.query);
+      res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
     } catch (error) {
       next(error);
     }
   };
 
+  getCityById = async (req, res, next) => {
+    try {
+      const city = await this.catalogueService.getCityById(req.params.id);
+      res.status(200).json({ success: true, data: city });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // --- Stops ---
   getStops = async (req, res, next) => {
     try {
-      const stops = await this.catalogueService.getStops();
-      res.status(200).json({ success: true, data: stops });
+      const result = await this.catalogueService.getStops(req.query);
+      res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
     } catch (error) {
       next(error);
     }
   };
 
+  getStopById = async (req, res, next) => {
+    try {
+      const stop = await this.catalogueService.getStopById(req.params.id);
+      res.status(200).json({ success: true, data: stop });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // --- Lines ---
   getLines = async (req, res, next) => {
     try {
-      const lines = await this.catalogueService.getLines();
-      res.status(200).json({ success: true, data: lines });
+      const result = await this.catalogueService.getLines(req.query);
+      res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
     } catch (error) {
       next(error);
     }
   };
 
-  getCoaches = async (req, res, next) => {
+  getLineById = async (req, res, next) => {
     try {
-      const coaches = await this.catalogueService.getCoaches();
-      res.status(200).json({ success: true, data: coaches });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  getDepartures = async (req, res, next) => {
-    try {
-      const departures = await this.catalogueService.getDepartures();
-      res.status(200).json({ success: true, data: departures });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  getDepartureById = async (req, res, next) => {
-    try {
-      const departure = await this.catalogueService.getDepartureById(req.params.id);
-      res.status(200).json({ success: true, data: departure });
+      const line = await this.catalogueService.getLineById(req.params.id);
+      res.status(200).json({ success: true, data: line });
     } catch (error) {
       next(error);
     }
@@ -66,6 +69,59 @@ class CatalogueController {
     }
   };
 
+  updateLine = async (req, res, next) => {
+    try {
+      const line = await this.catalogueService.updateLine(req.params.id, req.body);
+      res.status(200).json({ success: true, data: line });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  archiveLine = async (req, res, next) => {
+    try {
+      await this.catalogueService.archiveLine(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateLineCoach = async (req, res, next) => {
+    try {
+      res.status(200).json({ success: true, message: 'Line coach updated' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  removeLineCoach = async (req, res, next) => {
+    try {
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // --- Coaches ---
+  getCoaches = async (req, res, next) => {
+    try {
+      const result = await this.catalogueService.getCoaches(req.query);
+      res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getCoachById = async (req, res, next) => {
+    try {
+      const coach = await this.catalogueService.getCoachById(req.params.id);
+      res.status(200).json({ success: true, data: coach });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   createCoach = async (req, res, next) => {
     try {
       const coach = await this.catalogueService.createCoach(req.body);
@@ -75,26 +131,38 @@ class CatalogueController {
     }
   };
 
+  updateCoach = async (req, res, next) => {
+    try {
+      const coach = await this.catalogueService.updateCoach(req.params.id, req.body);
+      res.status(200).json({ success: true, data: coach });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   archiveCoach = async (req, res, next) => {
     try {
-      // منطق الأرشفة
+      await this.catalogueService.archiveCoach(req.params.id);
       res.status(204).send();
     } catch (error) {
       next(error);
     }
   };
 
-  updateLineCoach = async (req, res, next) => {
+  // --- Departures ---
+  getDepartures = async (req, res, next) => {
     try {
-      res.status(200).json({ success: true, message: "Line coach updated" });
+      const result = await this.catalogueService.getDepartures(req.query);
+      res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
     } catch (error) {
       next(error);
     }
   };
 
-  removeLineCoach = async (req, res, next) => {
+  getDepartureById = async (req, res, next) => {
     try {
-      res.status(204).send();
+      const departure = await this.catalogueService.getDepartureById(req.params.id);
+      res.status(200).json({ success: true, data: departure });
     } catch (error) {
       next(error);
     }
@@ -137,4 +205,5 @@ class CatalogueController {
   };
 }
 
-module.exports = { CatalogueController };
+module.exports = CatalogueController;
+module.exports.CatalogueController = CatalogueController;

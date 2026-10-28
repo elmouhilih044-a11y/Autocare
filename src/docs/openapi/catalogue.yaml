@@ -25,6 +25,12 @@ paths:
       summary: قائمة المحطات
       tags:
         - Catalogue
+      parameters:
+        - name: cityId
+          in: query
+          schema:
+            type: string
+          description: تصفية المحطات حسب معرف المدينة
       responses:
         '200':
           description: قائمة المحطات المتاحة
@@ -46,6 +52,21 @@ paths:
       summary: قائمة الخطوط
       tags:
         - Catalogue
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: isArchived
+          in: query
+          schema:
+            type: boolean
       responses:
         '200':
           description: قائمة الخطوط مع المحطات المرتبطة
@@ -76,7 +97,6 @@ paths:
               required:
                 - code
                 - label
-                - stopIds
               properties:
                 code:
                   type: string
@@ -96,8 +116,84 @@ paths:
           description: خطأ في البيانات المدخلة
         '403':
           description: غير مصرح (Admin فقط)
+        '404':
+          description: محطة غير موجودة
         '409':
           description: رمز الخط موجود مسبقاً
+
+  /lines/{id}:
+    get:
+      summary: تفاصيل خط محدد
+      tags:
+        - Catalogue
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تفاصيل الخط
+        '404':
+          description: الخط غير موجود
+    patch:
+      summary: تعديل خط (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                label:
+                  type: string
+                stopIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: تم تعديل الخط بنجاح
+        '400':
+          description: طلب فارغ أو الخط مؤرشف
+        '403':
+          description: غير مصرح
+        '404':
+          description: الخط أو المحطة غير موجودة
+        '409':
+          description: رمز الخط مستخدم مسبقاً
+    delete:
+      summary: أرشفة خط (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: تم أرشفة الخط بنجاح
+        '403':
+          description: غير مصرح
+        '404':
+          description: الخط غير موجود
 
   /coaches:
     get:
@@ -106,6 +202,17 @@ paths:
         - Catalogue
       security:
         - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
       responses:
         '200':
           description: قائمة الحافلات
@@ -138,14 +245,122 @@ paths:
       responses:
         '201':
           description: تم إنشاء الحافلة بنجاح
+        '400':
+          description: بيانات غير صالحة
+        '403':
+          description: غير مصرح
         '409':
           description: رقم الحافلة مستخدم مسبقاً
+
+  /coaches/{id}:
+    get:
+      summary: تفاصيل حافلة محددة (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تفاصيل الحافلة
+        '403':
+          description: غير مصرح
+        '404':
+          description: الحافلة غير موجودة
+    patch:
+      summary: تعديل حافلة (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                registration:
+                  type: string
+                seatNumbers:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        '200':
+          description: تم تعديل الحافلة بنجاح
+        '400':
+          description: طلب فارغ أو الحافلة مؤرشفة
+        '403':
+          description: غير مصرح
+        '404':
+          description: الحافلة غير موجودة
+        '409':
+          description: رقم الحافلة مستخدم مسبقاً
+    delete:
+      summary: أرشفة حافلة (Admin)
+      tags:
+        - Catalogue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: تم أرشفة الحافلة بنجاح
+        '403':
+          description: غير مصرح
+        '404':
+          description: الحافلة غير موجودة
 
   /departures:
     get:
       summary: قائمة الرحلات
       tags:
         - Catalogue
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: lineId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: ['OPEN', 'BOARDING', 'DEPARTED', 'CANCELLED']
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
       responses:
         '200':
           description: قائمة الرحلات المتاحة
@@ -186,8 +401,14 @@ paths:
       responses:
         '201':
           description: تم إنشاء الرحلة بنجاح مع الـ Snapshot
+        '400':
+          description: بيانات غير صالحة أو تاريخ في الماضي
+        '403':
+          description: غير مصرح
+        '404':
+          description: الخط أو الحافلة غير موجودة
         '409':
-          description: الخط أو الحافلة مؤرشفة أو غير متاحة
+          description: الخط أو الحافلة مؤرشفة (RESOURCE_CONFLICT)
 
   /departures/{id}:
     get:
@@ -208,7 +429,7 @@ paths:
 
   /departures/{id}/start-boarding:
     post:
-      summary: تغيير حالة الرحلة إلى BOARDING (Agent)
+      summary: تغيير حالة الرحلة إلى BOARDING (Agent / Admin)
       tags:
         - Catalogue
       security:
@@ -222,12 +443,16 @@ paths:
       responses:
         '200':
           description: تم فتح الصعود للرحلة
+        '403':
+          description: غير مصرح
+        '404':
+          description: الرحلة غير موجودة
         '409':
-          description: انتقال غير مسموح للحالة
+          description: انتقال غير مسموح للحالة (INVALID_DEPARTURE_TRANSITION)
 
   /departures/{id}/depart:
     post:
-      summary: تغيير حالة الرحلة إلى DEPARTED (Agent)
+      summary: تغيير حالة الرحلة إلى DEPARTED (Agent / Admin)
       tags:
         - Catalogue
       security:
@@ -241,6 +466,12 @@ paths:
       responses:
         '200':
           description: انطلقت الرحلة بنجاح
+        '403':
+          description: غير مصرح
+        '404':
+          description: الرحلة غير موجودة
+        '409':
+          description: انتقال غير مسموح للحالة (INVALID_DEPARTURE_TRANSITION)
 
   /departures/{id}/cancel:
     post:
@@ -258,6 +489,12 @@ paths:
       responses:
         '200':
           description: تم إلغاء الرحلة بنجاح
+        '403':
+          description: غير مصرح
+        '404':
+          description: الرحلة غير موجودة
+        '409':
+          description: انتقال غير مسموح للحالة (INVALID_DEPARTURE_TRANSITION)
 
 components:
   schemas:
@@ -268,7 +505,7 @@ components:
           type: string
         name:
           type: string
-          example: "Youssoufia"
+          example: "Casablanca"
     Stop:
       type: object
       properties:
@@ -278,7 +515,7 @@ components:
           type: string
         name:
           type: string
-          example: "Gare Routiere"
+          example: "Gare Routiere Ouled Ziane"
     Line:
       type: object
       properties:
@@ -286,7 +523,61 @@ components:
           type: string
         code:
           type: string
+          example: "LINE-10"
         label:
           type: string
+          example: "Casablanca - Marrakesh"
+        stopIds:
+          type: array
+          items:
+            type: string
         isArchived:
           type: boolean
+          example: false
+    Coach:
+      type: object
+      properties:
+        _id:
+          type: string
+        registration:
+          type: string
+          example: "12345-A-6"
+        seatNumbers:
+          type: array
+          items:
+            type: integer
+          example: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        isArchived:
+          type: boolean
+          example: false
+    Departure:
+      type: object
+      properties:
+        _id:
+          type: string
+        lineId:
+          type: string
+        coachId:
+          type: string
+        lineSnapshot:
+          type: object
+        coachSnapshot:
+          type: object
+        seatPlan:
+          type: array
+          items:
+            type: integer
+        departureAt:
+          type: string
+          format: date-time
+        arrivalAt:
+          type: string
+          format: date-time
+        fareCents:
+          type: integer
+        status:
+          type: string
+          enum: ['OPEN', 'BOARDING', 'DEPARTED', 'CANCELLED']
+        revision:
+          type: integer
+          example: 0

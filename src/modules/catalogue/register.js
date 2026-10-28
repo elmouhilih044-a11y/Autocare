@@ -1,9 +1,9 @@
 const { asClass, asFunction } = require('awilix');
-const { CatalogueRepository } = require('./repositories/catalogue.repository');
-const { CatalogueService } = require('./services/catalogue.service');
-const { CatalogueController } = require('./controllers/catalogue.controller');
+const CatalogueRepository = require('./repositories/catalogue.repository');
+const CatalogueService = require('./services/catalogue.service');
+const CatalogueController = require('./controllers/catalogue.controller');
 const { createCatalogueApi } = require('./index');
-const { createCatalogueRouter } = require('./routes/catalogue.routes');
+const createCatalogueRouter = require('./routes/catalogue.routes');
 
 function register(container) {
   container.register({

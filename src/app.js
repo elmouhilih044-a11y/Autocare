@@ -1,25 +1,24 @@
 const express = require('express');
-const connectDB = require('./shared/database');
+const defaultContainer = require('./bootstrap/container');
+const errorHandler = require('./shared/error-handler');
 
-const createApp = () => {
+const createApp = (container = defaultContainer) => {
   const app = express();
 
-  // Middleware
   app.use(express.json());
-  
-  
-  // Health check route
+
   app.get('/healthz', (req, res) => {
-    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.status(200).json({ status: 'OK' });
   });
 
-  
-  app.use('/api/v1', (req, res, next) => {
-   
-    next();
-  });
+  if (container && typeof container.resolve === 'function') {
+    const catalogueRouter = container.resolve('catalogueRouter');
+    app.use('/api/v1', catalogueRouter);
+  }
+
+  app.use(errorHandler);
 
   return app;
 };
 
-module.exports = createApp; 
+module.exports = createApp;
