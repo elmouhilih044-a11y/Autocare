@@ -11,9 +11,11 @@ const createApp = (container = defaultContainer) => {
     res.status(200).json({ status: 'OK' });
   });
 
-  if (container && typeof container.resolve === 'function') {
+    if (container && typeof container.resolve === 'function') {
     const catalogueRouter = container.resolve('catalogueRouter');
+    const boardingRouter = container.resolve('boardingRouter');
     app.use('/api/v1', catalogueRouter);
+    app.use('/api/v1', boardingRouter);
   }
 
   app.use(errorHandler);

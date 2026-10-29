@@ -1,4 +1,15 @@
 const { createContainer, asClass, asFunction, asValue } = require('awilix');
+const { withTransaction } = require('../shared/transaction');
+
+const { Booking } = require('../modules/reservations/models/booking.model');
+const { BookingRepository } = require('../modules/reservations/repositories/booking.repository');
+const { createReservationsApi } = require('../modules/reservations');
+
+const { BoardingRecord } = require('../modules/boarding/models/boardingRecord.model');
+const { BoardingRecordRepository } = require('../modules/boarding/repositories/boardingRecord.repository');
+const { BoardingService } = require('../modules/boarding/services/boarding.service');
+const BoardingController = require('../modules/boarding/controllers/boarding.controller');
+const createBoardingRouter = require('../modules/boarding/routes/boarding.routes');
 
 const CatalogueRepository = require('../modules/catalogue/repositories/catalogue.repository');
 const CatalogueService = require('../modules/catalogue/services/catalogue.service');
@@ -48,6 +59,20 @@ container.register({
   authenticate: asValue(authenticate),
   requireRole: asValue(requireRole),
   clock: asValue(clock),
+
+    transactionRunner: asValue(withTransaction),
+
+  // Reservations (skip if M1 already registered them)
+  bookingModel: asValue(Booking),
+  bookingRepository: asClass(BookingRepository).singleton(),
+  reservationsApi: asFunction(createReservationsApi).singleton(),
+
+  // Boarding
+  boardingRecordModel: asValue(BoardingRecord),
+  boardingRecordRepository: asClass(BoardingRecordRepository).singleton(),
+  boardingService: asClass(BoardingService).singleton(),
+  boardingController: asClass(BoardingController).singleton(),
+  boardingRouter: asFunction(createBoardingRouter).singleton(),
 });
 
 module.exports = container;
