@@ -1,6 +1,8 @@
 const request = require('supertest');
 const createApp = require('../../src/app');
 const { connectTestDB, disconnectTestDB, clearTestDB } = require('../setup');
+const { authHeader } = require('../helpers/auth');
+const { createTestDates } = require('../../src/shared/test-dates');
 const Line = require('../../src/modules/catalogue/models/line.model');
 const Coach = require('../../src/modules/catalogue/models/coach.model');
 const Departure = require('../../src/modules/catalogue/models/departure.model');
@@ -10,13 +12,11 @@ const Stop = require('../../src/modules/catalogue/models/stop.model');
 describe('Catalogue Module (Integration Tests)', () => {
   let app;
 
-  const adminAuth = { Authorization: 'Bearer admin' };
-  const agentAuth = { Authorization: 'Bearer agent' };
-  const passengerAuth = { Authorization: 'Bearer passenger' };
+  const adminAuth = authHeader('admin');
+  const agentAuth = authHeader('agent');
+  const passengerAuth = authHeader('passenger');
 
-  // Future dates
-  const futureDeparture = new Date(Date.now() + 86400000).toISOString();
-  const futureArrival = new Date(Date.now() + 93600000).toISOString();
+  const { departureAtIso: futureDeparture, arrivalAtIso: futureArrival } = createTestDates();
 
   beforeAll(async () => {
     await connectTestDB();

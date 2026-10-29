@@ -4,6 +4,7 @@ module.exports = {
   verbose: true,
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.js'],
+  setupFiles: ['<rootDir>/tests/setup-env.js'],
   clearMocks: true,
   restoreMocks: true,
 };

@@ -1,10 +1,8 @@
 const mongoose = require('mongoose');
+const env = require('../config/env');
 
-const connectDB = async () => {
+const connectDB = async (uri = env.mongodbUri) => {
   try {
-    
-    const uri = process.env.MONGODB_URI || 'mongodb://mongo:27017/strada?replicaSet=rs0';
-    
     await mongoose.connect(uri);
     console.log('MongoDB connected successfully with Replica Set.');
   } catch (error) {
