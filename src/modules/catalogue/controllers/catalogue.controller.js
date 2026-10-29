@@ -1,6 +1,7 @@
 class CatalogueController {
-  constructor({ catalogueService }) {
+  constructor({ catalogueService, cancelDepartureUseCase }) {
     this.catalogueService = catalogueService;
+    this.cancelDepartureUseCase = cancelDepartureUseCase;
   }
 
   // --- Cities ---
@@ -197,8 +198,13 @@ class CatalogueController {
 
   cancelDeparture = async (req, res, next) => {
     try {
-      const departure = await this.catalogueService.updateStatus(req.params.id, 'CANCELLED');
-      res.status(200).json({ success: true, data: departure });
+      // Annulation cohérente : départ + réservations confirmées (une seule opération)
+      const result = await this.cancelDepartureUseCase(req.params.id);
+      res.status(200).json({
+        success: true,
+        data: result.departure,
+        cancelledBookings: result.cancelledBookings,
+      });
     } catch (error) {
       next(error);
     }

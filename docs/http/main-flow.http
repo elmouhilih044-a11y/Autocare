@@ -1,0 +1,96 @@
+### Strada — parcours principal (M3)
+### Prérequis : API démarrée sur http://localhost:3000
+@baseUrl = http://localhost:3000/api/v1
+@adminToken = admin
+@passengerSara = passenger:507f1f77bcf86cd799439011
+@passengerOmar = passenger:507f1f77bcf86cd799439022
+
+### 0. Santé
+GET http://localhost:3000/healthz
+
+### 1. Admin — créer une ligne
+# @name createLine
+POST {{baseUrl}}/lines
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "code": "CASA-RAB",
+  "label": "Casablanca - Rabat"
+}
+
+### 2. Admin — créer un car
+# @name createCoach
+POST {{baseUrl}}/coaches
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "registration": "12345-A-6",
+  "seatNumbers": [1, 2, 3, 4, 5]
+}
+
+### 3. Admin — créer un départ
+# @name createDeparture
+POST {{baseUrl}}/departures
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "lineId": "{{createLine.response.body.data._id}}",
+  "coachId": "{{createCoach.response.body.data._id}}",
+  "departureAt": "2027-06-01T08:00:00.000Z",
+  "arrivalAt": "2027-06-01T10:30:00.000Z",
+  "fareCents": 7500
+}
+
+@departureId = {{createDeparture.response.body.data._id}}
+
+### 4. Consulter les sièges (tous libres)
+GET {{baseUrl}}/departures/{{departureId}}/seats
+
+### 5. Voyageur Sara — réserver le siège 2
+# @name bookSara
+POST {{baseUrl}}/departures/{{departureId}}/bookings
+Authorization: Bearer {{passengerSara}}
+x-user-name: Sara Amrani
+Content-Type: application/json
+
+{
+  "seatNumber": 2
+}
+
+### 6. Voyageur Omar — réserver le siège 3
+# @name bookOmar
+POST {{baseUrl}}/departures/{{departureId}}/bookings
+Authorization: Bearer {{passengerOmar}}
+x-user-name: Omar Alaoui
+Content-Type: application/json
+
+{
+  "seatNumber": 3
+}
+
+### 7. Sièges après réservations (2 et 3 OCCUPIED)
+GET {{baseUrl}}/departures/{{departureId}}/seats
+
+### 8. Sara consulte SES réservations uniquement
+GET {{baseUrl}}/bookings
+Authorization: Bearer {{passengerSara}}
+
+### 9. Admin consulte TOUTES les réservations
+GET {{baseUrl}}/bookings
+Authorization: Bearer {{adminToken}}
+
+### 10. Agent refusé sur /bookings
+GET {{baseUrl}}/bookings
+Authorization: Bearer agent
+
+### 11. Admin — annuler le départ (cascade sur les réservations)
+# @name cancelDeparture
+POST {{baseUrl}}/departures/{{departureId}}/cancel
+Authorization: Bearer {{adminToken}}
+
+### 12. Vérifier les réservations annulées (cancelReason = DEPARTURE)
+GET {{baseUrl}}/bookings
+Authorization: Bearer {{adminToken}}

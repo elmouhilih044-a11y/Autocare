@@ -1,0 +1,623 @@
+openapi: 3.0.3
+info:
+  title: Strada API
+  description: |
+    API de réservation de billets d'autocar (catalogue, réservations, annulation de départ).
+    Authentification de test : header `Authorization: Bearer <role>` ou `Bearer passenger:<userId>`.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: API v1
+tags:
+  - name: Health
+  - name: Catalogue
+  - name: Reservations
+  - name: Departures
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Santé du service
+      servers:
+        - url: /
+      responses:
+        '200':
+          description: Service OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+
+  /cities:
+    get:
+      tags: [Catalogue]
+      summary: Liste des villes
+      responses:
+        '200':
+          description: Liste paginée des villes
+
+  /cities/{id}:
+    get:
+      tags: [Catalogue]
+      summary: Détail d'une ville
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Ville trouvée
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /stops:
+    get:
+      tags: [Catalogue]
+      summary: Liste des arrêts
+      parameters:
+        - name: cityId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des arrêts
+
+  /stops/{id}:
+    get:
+      tags: [Catalogue]
+      summary: Détail d'un arrêt
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Arrêt trouvé
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /lines:
+    get:
+      tags: [Catalogue]
+      summary: Liste des lignes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: isArchived
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste des lignes
+    post:
+      tags: [Catalogue]
+      summary: Créer une ligne (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, label]
+              properties:
+                code:
+                  type: string
+                  example: LINE-10
+                label:
+                  type: string
+                  example: Casablanca - Marrakech
+                stopIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Ligne créée
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Code déjà utilisé
+
+  /lines/{id}:
+    get:
+      tags: [Catalogue]
+      summary: Détail d'une ligne
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Ligne trouvée
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Catalogue]
+      summary: Modifier une ligne (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                label:
+                  type: string
+                stopIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Ligne mise à jour
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      tags: [Catalogue]
+      summary: Archiver une ligne (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Ligne archivée
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /coaches:
+    get:
+      tags: [Catalogue]
+      summary: Liste des cars (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des cars
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Catalogue]
+      summary: Créer un car (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [registration, seatNumbers]
+              properties:
+                registration:
+                  type: string
+                  example: 12345-A-6
+                seatNumbers:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3, 4, 5]
+      responses:
+        '201':
+          description: Car créé
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /coaches/{id}:
+    get:
+      tags: [Catalogue]
+      summary: Détail d'un car (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Car trouvé
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags: [Catalogue]
+      summary: Modifier un car (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Car mis à jour
+    delete:
+      tags: [Catalogue]
+      summary: Archiver un car (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Car archivé
+
+  /departures:
+    get:
+      tags: [Departures]
+      summary: Liste des départs
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: lineId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, BOARDING, DEPARTED, CANCELLED]
+      responses:
+        '200':
+          description: Liste des départs
+    post:
+      tags: [Departures]
+      summary: Créer un départ (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lineId, coachId, departureAt, arrivalAt, fareCents]
+              properties:
+                lineId:
+                  type: string
+                coachId:
+                  type: string
+                departureAt:
+                  type: string
+                  format: date-time
+                arrivalAt:
+                  type: string
+                  format: date-time
+                fareCents:
+                  type: integer
+                  example: 15000
+      responses:
+        '201':
+          description: Départ créé avec snapshots figés
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /departures/{id}:
+    get:
+      tags: [Departures]
+      summary: Détail d'un départ
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Départ trouvé
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departures/{id}/seats:
+    get:
+      tags: [Reservations, Departures]
+      summary: Affichage des sièges (FREE / OCCUPIED)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Plan de sièges du départ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SeatMap'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /departures/{id}/bookings:
+    post:
+      tags: [Reservations]
+      summary: Réserver un siège (voyageur)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [seatNumber]
+              properties:
+                seatNumber:
+                  type: integer
+                  minimum: 1
+                  example: 2
+      responses:
+        '201':
+          description: Réservation confirmée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Booking'
+        '400':
+          description: Siège hors plan / corps invalide
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Siège indisponible ou déjà réservé
+
+  /departures/{id}/start-boarding:
+    post:
+      tags: [Departures]
+      summary: Ouvrir l'embarquement (agent / admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Statut BOARDING
+        '409':
+          description: Transition invalide
+
+  /departures/{id}/depart:
+    post:
+      tags: [Departures]
+      summary: Marquer le départ comme parti (agent / admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Statut DEPARTED
+        '409':
+          description: Transition invalide
+
+  /departures/{id}/cancel:
+    post:
+      tags: [Departures]
+      summary: Annuler un départ et ses réservations confirmées (admin)
+      description: |
+        Opération unique transactionnelle :
+        1. le départ passe à `CANCELLED`
+        2. toutes les réservations `CONFIRMED` du départ passent à `CANCELLED`
+           (`cancelReason = DEPARTURE`, `occupiesSeat = false`)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Départ et réservations annulés
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Departure'
+                  cancelledBookings:
+                    type: integer
+                    description: Nombre de réservations confirmées annulées en cascade
+                    example: 2
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Transition de statut invalide
+
+  /bookings:
+    get:
+      tags: [Reservations]
+      summary: Consulter les réservations
+      description: |
+        - **voyageur (passenger)** : uniquement ses réservations
+        - **admin** : toutes les réservations
+        - **agent** : refusé (403)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: departureId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [CONFIRMED, CANCELLED, BOARDED]
+        - name: passengerId
+          in: query
+          description: Filtre admin uniquement
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des réservations visibles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Reservations]
+      summary: Annuler sa propre réservation (voyageur)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Réservation annulée
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Réservation non annulable
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Token de test = rôle (`admin`, `agent`, `passenger`)
+        ou `passenger:<objectId>` pour un voyageur précis.
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+  responses:
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Accès refusé
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: string
+        message:
+          type: string
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+    Departure:
+      type: object
+      properties:
+        _id:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, BOARDING, DEPARTED, CANCELLED]
+        seatPlan:
+          type: array
+          items:
+            type: integer
+        fareCents:
+          type: integer
+        departureAt:
+          type: string
+          format: date-time
+        arrivalAt:
+          type: string
+          format: date-time
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        departureId:
+          type: string
+        seatNumber:
+          type: integer
+        passengerName:
+          type: string
+        priceCents:
+          type: integer
+        status:
+          type: string
+          enum: [CONFIRMED, CANCELLED, BOARDED]
+        ticketCode:
+          type: string
+        cancelReason:
+          type: string
+          nullable: true
+          enum: [CUSTOMER, DEPARTURE, null]
+        boardedAt:
+          type: string
+          format: date-time
+          nullable: true
+    SeatMap:
+      type: object
+      properties:
+        departureId:
+          type: string
+        status:
+          type: string
+        seats:
+          type: array
+          items:
+            type: object
+            properties:
+              number:
+                type: integer
+              status:
+                type: string
+                enum: [FREE, OCCUPIED]

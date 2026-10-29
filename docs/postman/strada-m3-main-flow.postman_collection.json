@@ -1,0 +1,148 @@
+{
+  "info": {
+    "name": "Strada M3 — parcours principal",
+    "description": "Ligne → car → départ → réservation → sièges → consultation → annulation cascade",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
+    { "key": "adminToken", "value": "admin" },
+    { "key": "passengerSara", "value": "passenger:507f1f77bcf86cd799439011" },
+    { "key": "lineId", "value": "" },
+    { "key": "coachId", "value": "" },
+    { "key": "departureId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Créer ligne",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const d = pm.response.json().data;",
+              "pm.collectionVariables.set('lineId', d._id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"CASA-RAB\",\n  \"label\": \"Casablanca - Rabat\"\n}"
+        },
+        "url": "{{baseUrl}}/lines"
+      }
+    },
+    {
+      "name": "2. Créer car",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const d = pm.response.json().data;",
+              "pm.collectionVariables.set('coachId', d._id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registration\": \"12345-A-6\",\n  \"seatNumbers\": [1, 2, 3, 4, 5]\n}"
+        },
+        "url": "{{baseUrl}}/coaches"
+      }
+    },
+    {
+      "name": "3. Créer départ",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const d = pm.response.json().data;",
+              "pm.collectionVariables.set('departureId', d._id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lineId\": \"{{lineId}}\",\n  \"coachId\": \"{{coachId}}\",\n  \"departureAt\": \"2027-06-01T08:00:00.000Z\",\n  \"arrivalAt\": \"2027-06-01T10:30:00.000Z\",\n  \"fareCents\": 7500\n}"
+        },
+        "url": "{{baseUrl}}/departures"
+      }
+    },
+    {
+      "name": "4. Sièges (avant réservation)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/departures/{{departureId}}/seats"
+      }
+    },
+    {
+      "name": "5. Réserver siège 2 (Sara)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{passengerSara}}" },
+          { "key": "x-user-name", "value": "Sara Amrani" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"seatNumber\": 2\n}"
+        },
+        "url": "{{baseUrl}}/departures/{{departureId}}/bookings"
+      }
+    },
+    {
+      "name": "6. Consulter mes réservations (Sara)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{passengerSara}}" }
+        ],
+        "url": "{{baseUrl}}/bookings"
+      }
+    },
+    {
+      "name": "7. Annuler le départ (admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/departures/{{departureId}}/cancel"
+      }
+    },
+    {
+      "name": "8. Admin — toutes les réservations (annulées)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/bookings"
+      }
+    }
+  ]
+}

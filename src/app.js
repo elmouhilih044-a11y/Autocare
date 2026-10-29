@@ -13,7 +13,9 @@ const createApp = (container = defaultContainer) => {
 
   if (container && typeof container.resolve === 'function') {
     const catalogueRouter = container.resolve('catalogueRouter');
+    const reservationsRouter = container.resolve('reservationsRouter');
     app.use('/api/v1', catalogueRouter);
+    app.use('/api/v1', reservationsRouter);
   }
 
   app.use(errorHandler);
