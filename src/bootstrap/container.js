@@ -5,6 +5,8 @@ const CatalogueService = require('../modules/catalogue/services/catalogue.servic
 const CatalogueController = require('../modules/catalogue/controllers/catalogue.controller');
 const createCatalogueRouter = require('../modules/catalogue/routes/catalogue.routes');
 const { createCatalogueApi } = require('../modules/catalogue');
+const { withTransaction } = require('../shared/transaction'); 
+const reservationsModule = require('../modules/reservations/register'); 
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -48,6 +50,9 @@ container.register({
   authenticate: asValue(authenticate),
   requireRole: asValue(requireRole),
   clock: asValue(clock),
+  transactionRunner: asValue(withTransaction), 
 });
+
+reservationsModule.register(container); 
 
 module.exports = container;
