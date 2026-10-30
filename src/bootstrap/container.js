@@ -3,6 +3,7 @@ const { createContainer: createAwilixContainer, asValue } = require('awilix');
 const { registerModules } = require('./register-modules');
 const { systemClock } = require('../shared/clock');
 const env = require('../config/env');
+const { withTransaction } = require('../shared/transaction');
 
 function createContainer(overrides = {}) {
   const container = createAwilixContainer();
@@ -14,6 +15,9 @@ function createContainer(overrides = {}) {
   });
 
   registerModules(container);
+  container.register({
+  transactionRunner: asValue(withTransaction),
+});
 
   return container;
 }

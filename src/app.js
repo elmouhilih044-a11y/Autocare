@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const defaultContainer = require('./bootstrap/container');
@@ -10,6 +11,7 @@ const createApp = (container = defaultContainer) => {
 
   app.get('/healthz', (req, res) => {
     const dbConnected = mongoose.connection.readyState === 1;
+
     res.status(200).json({
       status: 'OK',
       db: dbConnected ? 'connected' : 'disconnected',
@@ -19,10 +21,13 @@ const createApp = (container = defaultContainer) => {
   if (container && typeof container.resolve === 'function') {
     const authRouter = container.resolve('authRouter');
     const catalogueRouter = container.resolve('catalogueRouter');
+    const reservationsRouter = container.resolve('reservationsRouter');
+    const boardingRouter = container.resolve('boardingRouter');
+
     app.use('/api/v1', authRouter);
     app.use('/api/v1', catalogueRouter);
-    const reservationsRouter = container.resolve('reservationsRouter');
     app.use('/api/v1', reservationsRouter);
+    app.use('/api/v1', boardingRouter);
   }
 
   app.use(errorHandler);
